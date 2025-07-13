@@ -1,9 +1,36 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"os"
+
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
+	baseUrl := "https://openrouter.ai/api/v1"
+	// get from env
+	apiKey := os.Getenv("OPENROUTER_API_KEY")
+
+	client := openai.NewClient(
+		option.WithAPIKey(apiKey),
+		option.WithBaseURL(baseUrl),
+	)
+
+	ctx := context.Background()
+
+	completion, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.UserMessage("Hello, who are you?"),
+		},
+		Model: "openai/gpt-4.1-mini",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(completion.Choices[0].Message.Content)
 }
