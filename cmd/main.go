@@ -20,11 +20,17 @@ func main() {
 		option.WithBaseURL(baseUrl),
 	)
 
+	systemPrompt, err := os.ReadFile("system_prompt.tmpl")
+	if err != nil {
+		log.Fatal("Failed to read system prompt:", err)
+	}
+
 	ctx := context.Background()
 
 	completion, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage("Hello, who are you?"),
+			openai.SystemMessage(string(systemPrompt)),
+			openai.UserMessage("I have a friend, Amy, who is a software engineer. She is very talented and has worked on many projects. Can you tell me more about her?"),
 		},
 		Model: "openai/gpt-4.1-mini",
 	})
