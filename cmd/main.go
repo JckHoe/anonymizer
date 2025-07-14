@@ -11,7 +11,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	
+
 	client, model, err := CreateLLMClient()
 	if err != nil {
 		log.Fatal(err)
@@ -25,7 +25,7 @@ func main() {
 
 	completion, err := client.CreateChatCompletion(ctx, []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(string(systemPrompt)),
-		openai.UserMessage("I have a friend, Amy, who is a software engineer. She is very talented and has worked on many projects. Can you tell me more about her?"),
+		openai.UserMessage("I have a friend, Amy, who has a dog named Max. I have another field named Bob who has a cat named Luna."),
 	}, model)
 	if err != nil {
 		log.Fatal(err)
