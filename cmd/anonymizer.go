@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 
@@ -33,7 +34,7 @@ func NewAnonymizer() *Anonymizer {
 	}
 }
 
-func (an *Anonymizer) Anonymize(ctx context.Context, input string) string {
+func (an *Anonymizer) Anonymize(ctx context.Context, input string) map[string][]string {
 
 	systemPrompt, err := os.ReadFile("system_prompt.tmpl")
 	if err != nil {
@@ -49,5 +50,13 @@ func (an *Anonymizer) Anonymize(ctx context.Context, input string) string {
 		log.Fatal(err)
 	}
 
-	return completion.Choices[0].Message.Content
+	resp := completion.Choices[0].Message.Content
+
+	// Unmarshal the response into a map array
+
+	anonymizedData := make(map[string][]string)
+	if err := json.Unmarshal([]byte(resp), &anonymizedData); err != nil {
+		log.Fatalf("Failed to unmarshal anonymized data: %v", err)
+	}
+	return anonymizedData
 }

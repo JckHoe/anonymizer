@@ -14,17 +14,13 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Create OpenAI client directly
-
+	anonymizer := NewAnonymizer()
 	client := NewOpenAIClient()
 
-	// Store conversation history
-	var messages []openai.ChatCompletionMessageParamUnion
-
-	// CLI loop
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Enter your messages (type 'quit' to exit):")
 
+	var messages []openai.ChatCompletionMessageParamUnion
 	for {
 		fmt.Print("> ")
 		if !scanner.Scan() {
@@ -39,6 +35,10 @@ func main() {
 		if input == "" {
 			continue
 		}
+
+		// Test anonymizer
+		anonymized := anonymizer.Anonymize(ctx, input)
+		fmt.Printf("Anonymized Input: %s\n", anonymized)
 
 		messages = append(messages, openai.UserMessage(input))
 

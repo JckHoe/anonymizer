@@ -69,16 +69,19 @@ func (c *OllamaClient) CreateChatCompletion(ctx context.Context, messages []open
 func CreateLLMClient() (LLMClient, string, error) {
 	model := os.Getenv("MODEL_NAME")
 	if model == "" {
-		model = "llama3.2:1b"
+		model = "llama3.2:3b"
 	}
 
 	// Determine if this is an OpenAI model based on model name
-	isOpenAIModel := model == "openai/gpt-4.1-mini" ||
-		(len(model) > 6 && model[:6] == "openai") ||
-		(len(model) > 3 && model[:3] == "gpt")
+	// isOpenAIModel := model == "openai/gpt-4.1-mini" ||
+	// 	(len(model) > 6 && model[:6] == "openai") ||
+	// 	(len(model) > 3 && model[:3] == "gpt")
 
-	if isOpenAIModel {
-		return NewOpenAIClient(), model, nil
+	// if isOpenAIModel {
+
+	// Hardcode for now
+	if true {
+		return NewOpenAIClient(), "openai/gpt-4.1-mini", nil
 	}
 
 	// Use Ollama for all other models
