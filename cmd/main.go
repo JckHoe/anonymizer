@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -56,16 +57,14 @@ func main() {
 
 		messages = append(messages, openai.UserMessage(input))
 
-		fmt.Printf("%sCurrent Messages: %s%s\n", ColorBlue, messages, ColorReset)
+		// Print current messages content
+		printMessages("Current Messages", messages, ColorBlue)
 
 		// Use AnonymizeMessages with conversation history
 		anonymizedMessages := anonymizer.AnonymizeMessages(ctx, messages, allAnonymizedData)
 
-		// Print anonymized messages with better formatting
-		fmt.Printf("%sAnonymized Messages:%s\n", ColorPurple, ColorReset)
-		for i, msg := range anonymizedMessages {
-			fmt.Printf("%s  [%d]: %v%s\n", ColorPurple, i+1, msg, ColorReset)
-		}
+		// Print anonymized messages content
+		printMessages("Anonymized Messages", anonymizedMessages, ColorPurple)
 
 		// Create OpenAI client and call with anonymized messages
 		client := NewOpenAIClient()
@@ -85,4 +84,49 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error reading input: %v\n", err)
 	}
+}
+
+func printMessages(title string, messages []openai.ChatCompletionMessageParamUnion, color string) {
+	fmt.Printf("%s%s:%s\n", color, title, ColorReset)
+	for _, msg := range messages {
+		content := extractContentFromMessage(msg)
+		role := extractRoleFromMessage(msg)
+		fmt.Printf("%s  [%s]: %s%s\n", color, role, content, ColorReset)
+	}
+}
+
+func extractContentFromMessage(message openai.ChatCompletionMessageParamUnion) string {
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		return ""
+	}
+	
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonData, &parsed); err != nil {
+		return ""
+	}
+	
+	if content, ok := parsed["content"].(string); ok {
+		return content
+	}
+	
+	return ""
+}
+
+func extractRoleFromMessage(message openai.ChatCompletionMessageParamUnion) string {
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		return "user"
+	}
+	
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonData, &parsed); err != nil {
+		return "user"
+	}
+	
+	if role, ok := parsed["role"].(string); ok {
+		return role
+	}
+	
+	return "user"
 }
