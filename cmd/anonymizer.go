@@ -72,16 +72,17 @@ func (an *Anonymizer) Anonymize(ctx context.Context, input string) AnonymizedDat
 
 func (an *Anonymizer) AnonymizeMessages(
 	ctx context.Context,
-	messages []openai.ChatCompletionMessage,
+	messages []openai.ChatCompletionMessageParamUnion,
 	anonymizedData AnonymizedData,
-) (*openai.ChatCompletion, error) {
+) []openai.ChatCompletionMessageParamUnion {
 
 	// Create anonymized versions of messages
 	anonymizedMessages := make([]openai.ChatCompletionMessageParamUnion, len(messages))
 
 	// Replace values in each message with key + number format
 	for i, message := range messages {
-		content := message.Content
+		// Extract actual content from the message
+		content := extractContent(message)
 		anonymizedContent := content
 
 		// Replace each value with key + number format
@@ -93,7 +94,8 @@ func (an *Anonymizer) AnonymizeMessages(
 		}
 
 		// Create new message with anonymized content based on role
-		switch message.Role {
+		role := extractRole(message)
+		switch role {
 		case "user":
 			anonymizedMessages[i] = openai.UserMessage(anonymizedContent)
 		case "assistant":
@@ -105,6 +107,44 @@ func (an *Anonymizer) AnonymizeMessages(
 		}
 	}
 
-	// Send anonymized messages to OpenAI
-	return an.client.CreateChatCompletion(ctx, anonymizedMessages, an.model)
+	// Return anonymized messages
+	return anonymizedMessages
+}
+
+func extractContent(message openai.ChatCompletionMessageParamUnion) string {
+	// Convert to JSON to extract content
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		return ""
+	}
+	
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonData, &parsed); err != nil {
+		return ""
+	}
+	
+	if content, ok := parsed["content"].(string); ok {
+		return content
+	}
+	
+	return ""
+}
+
+func extractRole(message openai.ChatCompletionMessageParamUnion) string {
+	// Convert to JSON to extract role
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		return "user"
+	}
+	
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonData, &parsed); err != nil {
+		return "user"
+	}
+	
+	if role, ok := parsed["role"].(string); ok {
+		return role
+	}
+	
+	return "user"
 }

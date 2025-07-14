@@ -26,7 +26,6 @@ func main() {
 	ctx := context.Background()
 
 	anonymizer := NewAnonymizer()
-	client := NewOpenAIClient()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Enter your messages (type 'quit' to exit):")
@@ -57,7 +56,20 @@ func main() {
 
 		messages = append(messages, openai.UserMessage(input))
 
-		completion, err := client.CreateChatCompletion(ctx, messages, "openai/gpt-4.1-mini")
+		fmt.Printf("%sCurrent Messages: %s%s\n", ColorBlue, messages, ColorReset)
+
+		// Use AnonymizeMessages with conversation history
+		anonymizedMessages := anonymizer.AnonymizeMessages(ctx, messages, allAnonymizedData)
+
+		// Print anonymized messages with better formatting
+		fmt.Printf("%sAnonymized Messages:%s\n", ColorPurple, ColorReset)
+		for i, msg := range anonymizedMessages {
+			fmt.Printf("%s  [%d]: %v%s\n", ColorPurple, i+1, msg, ColorReset)
+		}
+
+		// Create OpenAI client and call with anonymized messages
+		client := NewOpenAIClient()
+		completion, err := client.CreateChatCompletion(ctx, anonymizedMessages, "openai/gpt-4.1-mini")
 		if err != nil {
 			log.Printf("%sError: %v%s\n", ColorRed, err, ColorReset)
 			continue
