@@ -113,3 +113,47 @@ func (an *Anonymizer) AnonymizeMessages(
 	// Return anonymized messages
 	return anonymizedMessages
 }
+
+func (an *Anonymizer) DeanonymizeMessages(
+	ctx context.Context,
+	messages []openai.ChatCompletionMessageParamUnion,
+	anonymizedData AnonymizedData,
+) []openai.ChatCompletionMessageParamUnion {
+
+	// Create deanonymized versions of messages
+	deanonymizedMessages := make([]openai.ChatCompletionMessageParamUnion, len(messages))
+
+	// Replace anonymized placeholders back to original values
+	for i, message := range messages {
+		// Extract actual content from the message
+		content := extractContent(message)
+		deanonymizedContent := content
+
+		// Replace each anonymized placeholder with original value
+		for key, values := range anonymizedData {
+			for j, value := range values {
+				placeholder := fmt.Sprintf("[%s %d]", key, j+1)
+				// Use regex with word boundaries to match whole placeholders only
+				pattern := `\b` + regexp.QuoteMeta(placeholder) + `\b`
+				re := regexp.MustCompile(pattern)
+				deanonymizedContent = re.ReplaceAllString(deanonymizedContent, value)
+			}
+		}
+
+		// Create new message with deanonymized content based on role
+		role := extractRole(message)
+		switch role {
+		case "user":
+			deanonymizedMessages[i] = openai.UserMessage(deanonymizedContent)
+		case "assistant":
+			deanonymizedMessages[i] = openai.AssistantMessage(deanonymizedContent)
+		case "system":
+			deanonymizedMessages[i] = openai.SystemMessage(deanonymizedContent)
+		default:
+			deanonymizedMessages[i] = openai.UserMessage(deanonymizedContent)
+		}
+	}
+
+	// Return deanonymized messages
+	return deanonymizedMessages
+}
