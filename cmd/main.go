@@ -76,6 +76,17 @@ func main() {
 		response := completion.Choices[0].Message.Content
 		fmt.Printf("%sResponse: %s%s\n\n", ColorGreen, response, ColorReset)
 
+		// Deanonymize the response for demonstration
+		responseMessage := []openai.ChatCompletionMessageParamUnion{
+			openai.AssistantMessage(response),
+		}
+		
+		// Debug: Print anonymized data to understand the mapping
+		fmt.Printf("%sDebug - Anonymized Data for deanonymization: %s%s\n", ColorYellow, allAnonymizedData, ColorReset)
+		
+		deanonymizedResponse := anonymizer.DeanonymizeMessages(ctx, responseMessage, allAnonymizedData)
+		printMessages("Deanonymized Response", deanonymizedResponse, ColorWhite)
+
 		// Add assistant response to history
 		messages = append(messages, openai.AssistantMessage(response))
 	}

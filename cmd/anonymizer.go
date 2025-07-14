@@ -132,11 +132,26 @@ func (an *Anonymizer) DeanonymizeMessages(
 		// Replace each anonymized placeholder with original value
 		for key, values := range anonymizedData {
 			for j, value := range values {
-				placeholder := fmt.Sprintf("[%s %d]", key, j+1)
-				// Use regex with word boundaries to match whole placeholders only
-				pattern := `\b` + regexp.QuoteMeta(placeholder) + `\b`
-				re := regexp.MustCompile(pattern)
-				deanonymizedContent = re.ReplaceAllString(deanonymizedContent, value)
+				// Replace both bracketed and unbracketed versions
+				bracketedPlaceholder := fmt.Sprintf("[%s %d]", key, j+1)
+				unbracketedPlaceholder := fmt.Sprintf("%s %d", key, j+1)
+
+				// log.Printf("Trying to replace '%s' and '%s' with '%s' in: %s", bracketedPlaceholder, unbracketedPlaceholder, value, deanonymizedContent)
+
+				// Replace bracketed version
+				pattern1 := regexp.QuoteMeta(bracketedPlaceholder)
+				re1 := regexp.MustCompile(pattern1)
+				// beforeReplace := deanonymizedContent
+				deanonymizedContent = re1.ReplaceAllString(deanonymizedContent, value)
+
+				// Replace unbracketed version
+				pattern2 := regexp.QuoteMeta(unbracketedPlaceholder)
+				re2 := regexp.MustCompile(pattern2)
+				deanonymizedContent = re2.ReplaceAllString(deanonymizedContent, value)
+
+				// if beforeReplace != deanonymizedContent {
+				// 	log.Printf("Successfully replaced placeholder with '%s'", value)
+				// }
 			}
 		}
 
