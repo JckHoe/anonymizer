@@ -1,0 +1,5 @@
+# Anonymizer
+
+```bash
+make run
+```
