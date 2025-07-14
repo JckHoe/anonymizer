@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	"regexp"
 
 	"github.com/openai/openai-go"
 )
@@ -85,11 +85,14 @@ func (an *Anonymizer) AnonymizeMessages(
 		content := extractContent(message)
 		anonymizedContent := content
 
-		// Replace each value with key + number format
+		// Replace each value with key + number format using word boundaries
 		for key, values := range anonymizedData {
 			for j, value := range values {
 				replacement := fmt.Sprintf("[%s %d]", key, j+1)
-				anonymizedContent = strings.ReplaceAll(anonymizedContent, value, replacement)
+				// Use regex with word boundaries to match whole words only
+				pattern := `\b` + regexp.QuoteMeta(value) + `\b`
+				re := regexp.MustCompile(pattern)
+				anonymizedContent = re.ReplaceAllString(anonymizedContent, replacement)
 			}
 		}
 
