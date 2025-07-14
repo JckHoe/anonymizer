@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/openai/openai-go"
 )
@@ -70,9 +72,39 @@ func (an *Anonymizer) Anonymize(ctx context.Context, input string) AnonymizedDat
 
 func (an *Anonymizer) AnonymizeMessages(
 	ctx context.Context,
-	messages []openai.ChatCompletionMessageParamUnion,
+	messages []openai.ChatCompletionMessage,
 	anonymizedData AnonymizedData,
 ) (*openai.ChatCompletion, error) {
 
-	return nil, nil
+	// Create anonymized versions of messages
+	anonymizedMessages := make([]openai.ChatCompletionMessageParamUnion, len(messages))
+
+	// Replace values in each message with key + number format
+	for i, message := range messages {
+		content := message.Content
+		anonymizedContent := content
+
+		// Replace each value with key + number format
+		for key, values := range anonymizedData {
+			for j, value := range values {
+				replacement := fmt.Sprintf("[%s %d]", key, j+1)
+				anonymizedContent = strings.ReplaceAll(anonymizedContent, value, replacement)
+			}
+		}
+
+		// Create new message with anonymized content based on role
+		switch message.Role {
+		case "user":
+			anonymizedMessages[i] = openai.UserMessage(anonymizedContent)
+		case "assistant":
+			anonymizedMessages[i] = openai.AssistantMessage(anonymizedContent)
+		case "system":
+			anonymizedMessages[i] = openai.SystemMessage(anonymizedContent)
+		default:
+			anonymizedMessages[i] = openai.UserMessage(anonymizedContent)
+		}
+	}
+
+	// Send anonymized messages to OpenAI
+	return an.client.CreateChatCompletion(ctx, anonymizedMessages, an.model)
 }
