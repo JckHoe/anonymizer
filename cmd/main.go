@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -95,38 +94,3 @@ func printMessages(title string, messages []openai.ChatCompletionMessageParamUni
 	}
 }
 
-func extractContentFromMessage(message openai.ChatCompletionMessageParamUnion) string {
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		return ""
-	}
-	
-	var parsed map[string]interface{}
-	if err := json.Unmarshal(jsonData, &parsed); err != nil {
-		return ""
-	}
-	
-	if content, ok := parsed["content"].(string); ok {
-		return content
-	}
-	
-	return ""
-}
-
-func extractRoleFromMessage(message openai.ChatCompletionMessageParamUnion) string {
-	jsonData, err := json.Marshal(message)
-	if err != nil {
-		return "user"
-	}
-	
-	var parsed map[string]interface{}
-	if err := json.Unmarshal(jsonData, &parsed); err != nil {
-		return "user"
-	}
-	
-	if role, ok := parsed["role"].(string); ok {
-		return role
-	}
-	
-	return "user"
-}
