@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -26,10 +27,13 @@ func NewOpenAIClient(apiKey, baseURL string) *OpenAIClient {
 }
 
 func (c *OpenAIClient) CreateChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion, model string) (*openai.ChatCompletion, error) {
+	start := time.Now()
 	completion, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: messages,
 		Model:    model,
 	})
+	duration := time.Since(start)
+	fmt.Printf("OpenAI API call took: %v\n", duration)
 	return completion, err
 }
 
@@ -49,10 +53,13 @@ func NewOllamaClient(baseURL string) *OllamaClient {
 }
 
 func (c *OllamaClient) CreateChatCompletion(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion, model string) (*openai.ChatCompletion, error) {
+	start := time.Now()
 	completion, err := c.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: messages,
 		Model:    model,
 	})
+	duration := time.Since(start)
+	fmt.Printf("Ollama API call took: %v\n", duration)
 	return completion, err
 }
 
