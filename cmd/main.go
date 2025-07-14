@@ -1,14 +1,61 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strings"
+
+	"github.com/openai/openai-go"
 )
 
 func main() {
 	ctx := context.Background()
 
-	anonymizer := NewAnonymizer()
-	result := anonymizer.Anonymize(ctx, "I have a friend, Amy, who has a dog named Max. I have another field named Bob who has a cat named Luna.")
-	log.Println("Anonymized result:", result)
+	// Create OpenAI client directly
+
+	client := NewOpenAIClient()
+
+	// Store conversation history
+	var messages []openai.ChatCompletionMessageParamUnion
+
+	// CLI loop
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Enter your messages (type 'quit' to exit):")
+
+	for {
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			break
+		}
+
+		input := strings.TrimSpace(scanner.Text())
+		if input == "quit" {
+			break
+		}
+
+		if input == "" {
+			continue
+		}
+
+		messages = append(messages, openai.UserMessage(input))
+
+		completion, err := client.CreateChatCompletion(ctx, messages, "openai/gpt-4.1-mini")
+		if err != nil {
+			log.Printf("Error: %v\n", err)
+			continue
+		}
+
+		response := completion.Choices[0].Message.Content
+		fmt.Printf("Response: %s\n\n", response)
+
+		// Add assistant response to history
+		messages = append(messages, openai.AssistantMessage(response))
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error reading input: %v\n", err)
+	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -19,7 +18,12 @@ type OpenAIClient struct {
 	client *openai.Client
 }
 
-func NewOpenAIClient(apiKey, baseURL string) *OpenAIClient {
+func NewOpenAIClient() *OpenAIClient {
+	baseURL := "https://openrouter.ai/api/v1"
+	apiKey := os.Getenv("OPENROUTER_API_KEY")
+	if apiKey == "" {
+		log.Fatal("OPENROUTER_API_KEY environment variable is required")
+	}
 	client := openai.NewClient(
 		option.WithAPIKey(apiKey),
 		option.WithBaseURL(baseURL),
@@ -42,10 +46,8 @@ type OllamaClient struct {
 	client *openai.Client
 }
 
-func NewOllamaClient(baseURL string) *OllamaClient {
-	if baseURL == "" {
-		baseURL = "http://localhost:11434/v1"
-	}
+func NewOllamaClient() *OllamaClient {
+	baseURL := "http://localhost:11434/v1"
 	client := openai.NewClient(
 		option.WithAPIKey(""),
 		option.WithBaseURL(baseURL),
@@ -76,13 +78,9 @@ func CreateLLMClient() (LLMClient, string, error) {
 		(len(model) > 3 && model[:3] == "gpt")
 
 	if isOpenAIModel {
-		apiKey := os.Getenv("OPENROUTER_API_KEY")
-		if apiKey == "" {
-			return nil, "", fmt.Errorf("OpenAI model '%s' selected but OPENROUTER_API_KEY is not set", model)
-		}
-		return NewOpenAIClient(apiKey, "https://openrouter.ai/api/v1"), model, nil
+		return NewOpenAIClient(), model, nil
 	}
 
 	// Use Ollama for all other models
-	return NewOllamaClient(os.Getenv("OLLAMA_BASE_URL")), model, nil
+	return NewOllamaClient(), model, nil
 }

@@ -24,7 +24,7 @@ func NewAnonymizer() *Anonymizer {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Using model: %s\n", model)
+	log.Printf("Anonymizer is using model: %s\n", model)
 
 	return &Anonymizer{
 		systemPrompt: string(systemPrompt),
