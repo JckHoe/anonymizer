@@ -34,7 +34,15 @@ func NewAnonymizer() *Anonymizer {
 	}
 }
 
-func (an *Anonymizer) Anonymize(ctx context.Context, input string) map[string][]string {
+type AnonymizedData map[string][]string
+
+func (ad AnonymizedData) Merge(other AnonymizedData) {
+	for key, values := range other {
+		ad[key] = append(ad[key], values...)
+	}
+}
+
+func (an *Anonymizer) Anonymize(ctx context.Context, input string) AnonymizedData {
 
 	systemPrompt, err := os.ReadFile("system_prompt.tmpl")
 	if err != nil {
@@ -53,10 +61,18 @@ func (an *Anonymizer) Anonymize(ctx context.Context, input string) map[string][]
 	resp := completion.Choices[0].Message.Content
 
 	// Unmarshal the response into a map array
-
-	anonymizedData := make(map[string][]string)
+	anonymizedData := make(AnonymizedData)
 	if err := json.Unmarshal([]byte(resp), &anonymizedData); err != nil {
 		log.Fatalf("Failed to unmarshal anonymized data: %v", err)
 	}
 	return anonymizedData
+}
+
+func (an *Anonymizer) AnonymizeMessages(
+	ctx context.Context,
+	messages []openai.ChatCompletionMessageParamUnion,
+	anonymizedData AnonymizedData,
+) (*openai.ChatCompletion, error) {
+
+	return nil, nil
 }

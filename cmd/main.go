@@ -11,6 +11,17 @@ import (
 	"github.com/openai/openai-go"
 )
 
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorPurple = "\033[35m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+)
+
 func main() {
 	ctx := context.Background()
 
@@ -21,6 +32,8 @@ func main() {
 	fmt.Println("Enter your messages (type 'quit' to exit):")
 
 	var messages []openai.ChatCompletionMessageParamUnion
+	allAnonymizedData := make(AnonymizedData)
+
 	for {
 		fmt.Print("> ")
 		if !scanner.Scan() {
@@ -38,18 +51,20 @@ func main() {
 
 		// Test anonymizer
 		anonymized := anonymizer.Anonymize(ctx, input)
-		fmt.Printf("Anonymized Input: %s\n", anonymized)
+		allAnonymizedData.Merge(anonymized)
+		fmt.Printf("%sAnonymized Data: %s%s\n", ColorYellow, anonymized, ColorReset)
+		fmt.Printf("%sAll Anonymized Data: %s%s\n", ColorCyan, allAnonymizedData, ColorReset)
 
 		messages = append(messages, openai.UserMessage(input))
 
 		completion, err := client.CreateChatCompletion(ctx, messages, "openai/gpt-4.1-mini")
 		if err != nil {
-			log.Printf("Error: %v\n", err)
+			log.Printf("%sError: %v%s\n", ColorRed, err, ColorReset)
 			continue
 		}
 
 		response := completion.Choices[0].Message.Content
-		fmt.Printf("Response: %s\n\n", response)
+		fmt.Printf("%sResponse: %s%s\n\n", ColorGreen, response, ColorReset)
 
 		// Add assistant response to history
 		messages = append(messages, openai.AssistantMessage(response))
