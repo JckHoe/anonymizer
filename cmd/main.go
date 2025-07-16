@@ -26,6 +26,10 @@ func main() {
 	ctx := context.Background()
 
 	anonymizer := NewAnonymizer()
+	secretSelector, err := NewLLMSecretSelector()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Enter your messages (type 'quit' to exit):")
@@ -48,7 +52,10 @@ func main() {
 			continue
 		}
 
-		secrets := anonymizer.Anonymize(ctx, input)
+		secrets, err := secretSelector.Select(ctx, input)
+		if err != nil {
+			log.Fatal(err)
+		}
 		allSecrets.Merge(secrets)
 		fmt.Printf("%Secret Data: %s%s\n", ColorYellow, secrets, ColorReset)
 		fmt.Printf("%sAll Secret Data: %s%s\n", ColorCyan, allSecrets, ColorReset)
