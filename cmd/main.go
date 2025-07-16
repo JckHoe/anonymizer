@@ -66,8 +66,7 @@ func main() {
 		printMessages("Anonymized Messages", anonymizedMessages, ColorPurple)
 
 		// Create OpenAI client and call with anonymized messages
-		client := NewOpenAIClient()
-		completion, err := client.CreateChatCompletion(ctx, anonymizedMessages, "openai/gpt-4.1-mini")
+		completion, err := anonymizer.client.CreateChatCompletion(ctx, anonymizedMessages, "openai/gpt-4.1-mini")
 		if err != nil {
 			log.Printf("%sError: %v%s\n", ColorRed, err, ColorReset)
 			continue
