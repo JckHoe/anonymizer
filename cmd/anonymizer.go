@@ -36,15 +36,7 @@ func NewAnonymizer() *Anonymizer {
 	}
 }
 
-type AnonymizedData map[string][]string
-
-func (ad AnonymizedData) Merge(other AnonymizedData) {
-	for key, values := range other {
-		ad[key] = append(ad[key], values...)
-	}
-}
-
-func (an *Anonymizer) Anonymize(ctx context.Context, input string) AnonymizedData {
+func (an *Anonymizer) Anonymize(ctx context.Context, input string) Secrets {
 
 	systemPrompt, err := os.ReadFile("system_prompt.tmpl")
 	if err != nil {
@@ -63,17 +55,17 @@ func (an *Anonymizer) Anonymize(ctx context.Context, input string) AnonymizedDat
 	resp := completion.Choices[0].Message.Content
 
 	// Unmarshal the response into a map array
-	anonymizedData := make(AnonymizedData)
-	if err := json.Unmarshal([]byte(resp), &anonymizedData); err != nil {
+	secrets := make(Secrets)
+	if err := json.Unmarshal([]byte(resp), &secrets); err != nil {
 		log.Fatalf("Failed to unmarshal anonymized data: %v", err)
 	}
-	return anonymizedData
+	return secrets
 }
 
 func (an *Anonymizer) AnonymizeMessages(
 	ctx context.Context,
 	messages []openai.ChatCompletionMessageParamUnion,
-	anonymizedData AnonymizedData,
+	anonymizedData Secrets,
 ) []openai.ChatCompletionMessageParamUnion {
 
 	// Create anonymized versions of messages
@@ -117,7 +109,7 @@ func (an *Anonymizer) AnonymizeMessages(
 func (an *Anonymizer) DeanonymizeMessages(
 	ctx context.Context,
 	messages []openai.ChatCompletionMessageParamUnion,
-	anonymizedData AnonymizedData,
+	anonymizedData Secrets,
 ) []openai.ChatCompletionMessageParamUnion {
 
 	// Create deanonymized versions of messages

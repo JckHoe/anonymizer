@@ -31,7 +31,7 @@ func main() {
 	fmt.Println("Enter your messages (type 'quit' to exit):")
 
 	var messages []openai.ChatCompletionMessageParamUnion
-	allAnonymizedData := make(AnonymizedData)
+	allSecrets := make(Secrets)
 
 	for {
 		fmt.Print("> ")
@@ -48,11 +48,10 @@ func main() {
 			continue
 		}
 
-		// Test anonymizer
-		anonymized := anonymizer.Anonymize(ctx, input)
-		allAnonymizedData.Merge(anonymized)
-		fmt.Printf("%sAnonymized Data: %s%s\n", ColorYellow, anonymized, ColorReset)
-		fmt.Printf("%sAll Anonymized Data: %s%s\n", ColorCyan, allAnonymizedData, ColorReset)
+		secrets := anonymizer.Anonymize(ctx, input)
+		allSecrets.Merge(secrets)
+		fmt.Printf("%Secret Data: %s%s\n", ColorYellow, secrets, ColorReset)
+		fmt.Printf("%sAll Secret Data: %s%s\n", ColorCyan, allSecrets, ColorReset)
 
 		messages = append(messages, openai.UserMessage(input))
 
@@ -60,7 +59,7 @@ func main() {
 		printMessages("Current Messages", messages, ColorBlue)
 
 		// Use AnonymizeMessages with conversation history
-		anonymizedMessages := anonymizer.AnonymizeMessages(ctx, messages, allAnonymizedData)
+		anonymizedMessages := anonymizer.AnonymizeMessages(ctx, messages, allSecrets)
 
 		// Print anonymized messages content
 		printMessages("Anonymized Messages", anonymizedMessages, ColorPurple)
@@ -82,9 +81,9 @@ func main() {
 		}
 
 		// Debug: Print anonymized data to understand the mapping
-		fmt.Printf("%sDebug - Anonymized Data for deanonymization: %s%s\n", ColorYellow, allAnonymizedData, ColorReset)
+		fmt.Printf("%sDebug - Anonymized Data for deanonymization: %s%s\n", ColorYellow, allSecrets, ColorReset)
 
-		deanonymizedResponse := anonymizer.DeanonymizeMessages(ctx, responseMessage, allAnonymizedData)
+		deanonymizedResponse := anonymizer.DeanonymizeMessages(ctx, responseMessage, allSecrets)
 		printMessages("Deanonymized Response", deanonymizedResponse, ColorGreen)
 
 		// Add deanonymized assistant response to history
