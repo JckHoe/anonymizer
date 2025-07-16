@@ -179,6 +179,39 @@ func (c *PIIDetectorClient) convertPIIResultsToAnonymizationFormat(output interf
 	}
 
 	switch v := output.(type) {
+	case []any:
+		for _, entity := range v {
+			if entityMap, ok := entity.(map[string]interface{}); ok {
+				var entityType string
+				var entityText string
+
+				if et, ok := entityMap["entity_type"].(string); ok {
+					entityType = et
+				} else if sl, ok := entityMap["spacy_label"].(string); ok {
+					entityType = sl
+				}
+
+				if text, ok := entityMap["text"].(string); ok {
+					entityText = text
+				}
+
+				if entityType != "" && entityText != "" {
+					mappedCategory := c.mapPIICategory(entityType)
+					if mappedCategory != "" {
+						found := false
+						for _, existing := range anonymizedData[mappedCategory] {
+							if existing == entityText {
+								found = true
+								break
+							}
+						}
+						if !found {
+							anonymizedData[mappedCategory] = append(anonymizedData[mappedCategory], entityText)
+						}
+					}
+				}
+			}
+		}
 	case map[string]any:
 		for category, entities := range v {
 			if entitiesList, ok := entities.([]interface{}); ok {
@@ -191,19 +224,6 @@ func (c *PIIDetectorClient) convertPIIResultsToAnonymizationFormat(output interf
 				mappedCategory := c.mapPIICategory(category)
 				if mappedCategory != "" {
 					anonymizedData[mappedCategory] = stringList
-				}
-			}
-		}
-	case []any:
-		for _, entity := range v {
-			if entityMap, ok := entity.(map[string]interface{}); ok {
-				if entityType, ok := entityMap["type"].(string); ok {
-					if entityValue, ok := entityMap["value"].(string); ok {
-						mappedCategory := c.mapPIICategory(entityType)
-						if mappedCategory != "" {
-							anonymizedData[mappedCategory] = append(anonymizedData[mappedCategory], entityValue)
-						}
-					}
 				}
 			}
 		}
@@ -224,18 +244,32 @@ func (c *PIIDetectorClient) convertPIIResultsToAnonymizationFormat(output interf
 
 func (c *PIIDetectorClient) mapPIICategory(category string) string {
 	lowerCategory := strings.ToLower(category)
+
 	switch {
-	case strings.Contains(lowerCategory, "person") || strings.Contains(lowerCategory, "name"):
+	case lowerCategory == "person" || lowerCategory == "person_name" ||
+		strings.Contains(lowerCategory, "person") || strings.Contains(lowerCategory, "name"):
 		return "Person"
-	case strings.Contains(lowerCategory, "location") || strings.Contains(lowerCategory, "address"):
+
+	case lowerCategory == "gpe" || lowerCategory == "loc" || lowerCategory == "location" ||
+		strings.Contains(lowerCategory, "location") || strings.Contains(lowerCategory, "address") ||
+		strings.Contains(lowerCategory, "place") || strings.Contains(lowerCategory, "city") ||
+		strings.Contains(lowerCategory, "country"):
 		return "Location"
-	case strings.Contains(lowerCategory, "company") || strings.Contains(lowerCategory, "organization"):
+
+	case lowerCategory == "org" || lowerCategory == "organization" || lowerCategory == "company" ||
+		strings.Contains(lowerCategory, "company") || strings.Contains(lowerCategory, "organization") ||
+		strings.Contains(lowerCategory, "business"):
 		return "Company"
-	case strings.Contains(lowerCategory, "email"):
+
+	case strings.Contains(lowerCategory, "email") || strings.Contains(lowerCategory, "mail"):
 		return "Email"
-	case strings.Contains(lowerCategory, "phone"):
+
+	case strings.Contains(lowerCategory, "phone") || strings.Contains(lowerCategory, "telephone") ||
+		strings.Contains(lowerCategory, "mobile") || strings.Contains(lowerCategory, "cell"):
 		return "Phone"
+
 	default:
+		// Silently ignore unmapped categories (like "number", etc.)
 		return ""
 	}
 }
